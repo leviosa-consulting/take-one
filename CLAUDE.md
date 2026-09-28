@@ -25,6 +25,8 @@ Run `python3 -m http.server 8000`, open the page, and click through Learn, Cover
 
 The live artifact is published from these files with the Artifact tool: `index.html` as the page, `css/` and `js/` as supporting files, capabilities `{db: {}, user: {}, downloads: true}`. Republish to the same URL; never create a second artifact.
 
+The public site is https://take-one.gbsims.com, on GitHub Pages. `.github/workflows/pages.yml` deploys it on every push to `main`. There it has no store, so films live in browser storage until a backend for login and saved films is added behind `storage.js`.
+
 ## Open items, in priority order
 
 1. Stage: figures cannot move up and down; angle only tilts the frame for Dutch; no line-crossing or eyeline warnings yet.

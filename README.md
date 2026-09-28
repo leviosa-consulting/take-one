@@ -54,6 +54,8 @@ stage  { items: [{ id, kind: 'cast'|'prop', ref, x, z, face, pose }] }
 
 The live page is published as a claude.ai artifact from these files: `index.html` as the page and the `css` and `js` folders as supporting files. The published skeleton adds the doctype, head and a small reset; `index.html` starts with `<title>`.
 
+The same files also go to GitHub Pages, served at https://take-one.gbsims.com (custom domain set in the repo's Pages settings, DNS is a CNAME to `leviosa-consulting.github.io`). The workflow in `.github/workflows/pages.yml` runs on every push to `main`. It adds the doctype and head that the artifact host would add. On Pages there is no store, so films stay in the visitor's browser.
+
 ## Sources
 
 The vocabulary follows the standard film-school material (StudioBinder's guides; Katz, *Film Directing: Shot by Shot*; Brown, *Cinematography: Theory and Practice*; Mercado, *The Filmmaker's Eye*). The two-person dialogue recipe matches those sources. The other recipes are arrangements of the same building blocks. The Sources chapter in the Learn tab lists the links.
