@@ -67,6 +67,25 @@ function propSVG(kind) {
   }
   return '';
 }
+// Layering: further back is drawn first; at the same depth, earlier in the list is drawn first.
+function drawOrder(items) { return items.slice().sort((a, b) => (b.z || 0) - (a.z || 0)); }
+function itemSpan(it) {
+  const [bx, , bw] = (it.kind === 'prop' && PROP_BOX[it.ref]) || [-14, 0, 28], s = depthScale(it.z);
+  return [(it.x + bx) * s, (it.x + bx + bw) * s];
+}
+// The nearest item this one overlaps on screen, drawn just behind it (dir -1) or just in front (dir +1).
+function layerNeighbour(shot, it, dir) {
+  const order = drawOrder(stageItems(shot)), i = order.indexOf(it), [a0, a1] = itemSpan(it);
+  const near = order.filter((o, j) => o !== it && (dir < 0 ? j < i : j > i) && (([b0, b1]) => b0 < a1 && a0 < b1)(itemSpan(o)));
+  return dir < 0 ? near[near.length - 1] : near[0];
+}
+// Move an item just behind or in front of its neighbour: take the neighbour's depth, then sit before or after it in the list.
+function relayer(shot, it, dir) {
+  const other = layerNeighbour(shot, it, dir); if (!other) return false;
+  const items = shot.stage.items; it.z = other.z || 0;
+  items.splice(items.indexOf(it), 1); items.splice(items.indexOf(other) + (dir < 0 ? 0 : 1), 0, it);
+  return true;
+}
 function stageItems(shot) { return (shot.stage && Array.isArray(shot.stage.items)) ? shot.stage.items : []; }
 function castOf(film, id) { return (film && film.cast || []).find(c => c.id === id); }
 // Back wall, ceiling line and floor boards that run toward the horizon, so the angle reads.
@@ -80,7 +99,7 @@ function roomPlain(c) {
     <line x1="-900" y1="${ceil.toFixed(1)}" x2="900" y2="${ceil.toFixed(1)}" stroke-dasharray="1 3"/></g>`;
 }
 function stageInner(shot, film, selectedId, c = camFor(shot.angle)) {
-  const items = stageItems(shot).slice().sort((a, b) => (b.z || 0) - (a.z || 0));
+  const items = drawOrder(stageItems(shot));
   return (c.taper ? taperDefs() : '') + roomPlain(c) + items.map(it => {
     let body = '';
     if (it.kind === 'cast') {
@@ -185,6 +204,8 @@ function stagePanel(shot, film) {
           ${it.kind === 'cast' ? `<span class="chip"><span class="k">Faces</span><select data-stage-f="face">${['camera', 'left', 'right', 'away'].map(v => `<option value="${v}" ${(it.face || 'camera') === v ? 'selected' : ''}>${v}</option>`).join('')}</select></span>
           <span class="chip"><span class="k">Pose</span><select data-stage-f="pose">${['stand', 'sit'].map(v => `<option value="${v}" ${(it.pose || 'stand') === v ? 'selected' : ''}>${v}</option>`).join('')}</select></span>` : ''}
           <span class="chip"><span class="k">Depth</span><select data-stage-f="z">${DEPTH.map((d, i) => `<option value="${i}" ${Math.min(2, Math.round(it.z || 0)) === i ? 'selected' : ''}>${d.name}</option>`).join('')}</select></span>
+          <button class="btn small" data-stage-layer="-1" ${layerNeighbour(shot, it, -1) ? '' : 'disabled'} title="Put it behind the item it overlaps">Behind</button>
+          <button class="btn small" data-stage-layer="1" ${layerNeighbour(shot, it, 1) ? '' : 'disabled'} title="Put it in front of the item it overlaps">In front</button>
           <button class="btn small ghost danger" data-stage-remove="${it.id}">Remove</button>
         </div></div>` : '<p class="muted" style="font-size:13px">Nothing selected. Tap a person or prop on the stage.</p>'}
       ${stageItems(shot).length ? `<p class="muted" style="font-size:13px">Framing reads as <b>${esc((FRAME[detectFraming(shot) || shot.framing] || {}).name || '')}</b> from the stage.</p>` : ''}
@@ -235,6 +256,10 @@ function wireStage(panel, film, sc, shot) {
     const f = sel.dataset.stageF; it[f] = f === 'z' ? +sel.value : sel.value;
     const fr = detectFraming(shot); if (fr) shot.framing = fr;
     save(film); rerenderShot(film, sc, shot);
+  });
+  panel.querySelectorAll('[data-stage-layer]').forEach(b => b.onclick = () => {
+    const it = stageItems(shot).find(i => i.id === state.stageSel); if (!it) return;
+    if (relayer(shot, it, +b.dataset.stageLayer)) { const fr = detectFraming(shot); if (fr) shot.framing = fr; save(film); rerenderShot(film, sc, shot); }
   });
   panel.querySelectorAll('[data-stage-remove]').forEach(b => b.onclick = () => {
     shot.stage.items = shot.stage.items.filter(i => i.id !== b.dataset.stageRemove); state.stageSel = null;

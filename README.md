@@ -49,7 +49,7 @@ shot   { id, size, framing, angle, move, lens, dur?, description, notes, done, s
 stage  { items: [{ id, kind: 'cast'|'prop', ref, x, z, face, pose }] }
 ```
 
-`size`, `framing`, `angle` and `move` are ids from `js/data.js`. `lens` is one of the labels in `LENSES`. `dur` is the shot's length in whole seconds; shots without one are left out of the totals. `x` is the horizontal position in figure units. `z` is depth from 0 (front) to 3; the menu names 0, 1 and 2 Front, Middle and Back, and dragging sets anything in between.
+`size`, `framing`, `angle` and `move` are ids from `js/data.js`. `lens` is one of the labels in `LENSES`. `dur` is the shot's length in whole seconds; shots without one are left out of the totals. `x` is the horizontal position in figure units. `z` is depth from 0 (front) to 3; the menu names 0, 1 and 2 Front, Middle and Back, and dragging sets anything in between. Items further back are drawn first. At the same depth, the order of `items` decides: earlier is behind. The Behind and In front buttons change that order.
 
 ## Publishing
 

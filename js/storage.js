@@ -24,7 +24,7 @@ function exampleFilm() {
   const maya = (x, o = {}) => ({ kind: 'cast', ref: 'maya', x, ...o }), dev = (x, o = {}) => ({ kind: 'cast', ref: 'dev', x, ...o }), prop = (ref, x, z = 1) => ({ kind: 'prop', ref, x, z });
   f.scenes = [
     newScene({ heading: 'INT. OFFICE - NIGHT', description: 'Maya works alone at her desk. The lights cut out.', shots: [
-      newShot({ dur: 12, size: 'WS', framing: 'single', angle: 'eye', move: 'static', lens: LENSES[1], description: 'Master. Maya at the desk, the empty office around her.', notes: 'Tripod on the far table. Practical lamps on.', stage: st(prop('window', -70, 2), prop('desk', 0, 0), maya(0, { pose: 'sit' }), prop('lamp', 46, 1), prop('door', 100, 2)) }),
+      newShot({ dur: 12, size: 'WS', framing: 'single', angle: 'eye', move: 'static', lens: LENSES[1], description: 'Master. Maya at the desk, the empty office around her.', notes: 'Tripod on the far table. Practical lamps on.', stage: st(prop('window', -70, 2), maya(0, { pose: 'sit' }), prop('desk', 0, 0), prop('lamp', 46, 1), prop('door', 100, 2)) }),
       newShot({ dur: 6, size: 'MS', framing: 'single', angle: 'high', move: 'static', lens: LENSES[1], description: 'Maya types. She looks small in the frame.', notes: 'Gimbal held overhead, or phone clamped to the shelf.' }),
       newShot({ dur: 5, size: 'CU', framing: 'single', angle: 'eye', move: 'push', lens: LENSES[2], description: 'She notices the time. Slow push in.', notes: 'Very slow walk. Two takes minimum.', stage: st(maya(0, { pose: 'sit' }), prop('window', -60, 2)) }),
       newShot({ dur: 3, size: 'ECU', framing: 'insert', angle: 'high', move: 'static', lens: LENSES[2], description: 'Insert: laptop clock reads 11:58.', notes: 'Lock focus. Shoot 10 seconds.' }),

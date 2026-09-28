@@ -54,6 +54,7 @@ p{margin:0}
 .btn.ghost{border-color:transparent;background:transparent;color:var(--muted)}
 .btn.ghost:hover{color:var(--ink);background:var(--surface-2)}
 .btn.danger{color:var(--danger)}
+.btn:disabled{opacity:.45;cursor:default}
 select.ctl,input.ctl,textarea.ctl{border:1px solid var(--line);background:var(--surface);border-radius:5px;padding:6px 8px;font-size:14px;min-width:0}
 textarea.ctl{resize:vertical}
 label.lbl{display:block;font-family:var(--display);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
