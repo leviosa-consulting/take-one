@@ -37,17 +37,18 @@ function renderCoverage(recipeId) {
   });
 }
 function asText(film) {
-  const lines = [film.title.toUpperCase(), film.logline || '', ''];
+  const total = film.scenes.reduce((n, sc) => n + sumDur(sc.shots), 0);
+  const lines = [film.title.toUpperCase() + (total ? `  (running time ${fmtDur(total)})` : ''), film.logline || '', ''];
   film.scenes.forEach((sc, i) => {
-    lines.push(`SC ${i + 1}  ${sc.heading}`); if (sc.description) lines.push(`      ${sc.description}`);
-    sc.shots.forEach((s, j) => lines.push(`  ${shotLabel(i, j).padEnd(4)} ${s.done ? '[x]' : '[ ]'} ${SIZE[s.size]?.abbr.padEnd(4)} ${FRAME[s.framing]?.name.padEnd(18)} ${ANGLE[s.angle]?.name.padEnd(12)} ${MOVE[s.move]?.name.padEnd(16)} ${s.lens.padEnd(20)} ${s.description}${s.notes ? '  (' + s.notes + ')' : ''}`));
+    lines.push(`SC ${i + 1}  ${sc.heading}${sumDur(sc.shots) ? '  (' + fmtDur(sumDur(sc.shots)) + ')' : ''}`); if (sc.description) lines.push(`      ${sc.description}`);
+    sc.shots.forEach((s, j) => lines.push(`  ${shotLabel(i, j).padEnd(4)} ${s.done ? '[x]' : '[ ]'} ${SIZE[s.size]?.abbr.padEnd(4)} ${FRAME[s.framing]?.name.padEnd(18)} ${ANGLE[s.angle]?.name.padEnd(12)} ${MOVE[s.move]?.name.padEnd(16)} ${s.lens.padEnd(20)} ${fmtDur(s.dur).padStart(5)}  ${s.description}${s.notes ? '  (' + s.notes + ')' : ''}`));
     lines.push('');
   });
   return lines.join('\n');
 }
 function asCSV(film) {
   const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
-  const rows = [['Scene', 'Scene heading', 'Shot', 'Size', 'Framing', 'Angle', 'Movement', 'Lens', 'Description', 'Notes', 'Done']];
-  film.scenes.forEach((sc, i) => sc.shots.forEach((s, j) => rows.push([i + 1, sc.heading, shotLabel(i, j), SIZE[s.size]?.abbr, FRAME[s.framing]?.name, ANGLE[s.angle]?.name, MOVE[s.move]?.name, s.lens, s.description, s.notes, s.done ? 'yes' : 'no'])));
+  const rows = [['Scene', 'Scene heading', 'Shot', 'Size', 'Framing', 'Angle', 'Movement', 'Lens', 'Length (s)', 'Description', 'Notes', 'Done']];
+  film.scenes.forEach((sc, i) => sc.shots.forEach((s, j) => rows.push([i + 1, sc.heading, shotLabel(i, j), SIZE[s.size]?.abbr, FRAME[s.framing]?.name, ANGLE[s.angle]?.name, MOVE[s.move]?.name, s.lens, s.dur || '', s.description, s.notes, s.done ? 'yes' : 'no'])));
   return rows.map(r => r.map(q).join(',')).join('\r\n');
 }

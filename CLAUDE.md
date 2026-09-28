@@ -29,7 +29,6 @@ The public site is https://take-one.gbsims.com, on GitHub Pages. `.github/workfl
 
 ## Open items, in priority order
 
-1. Duration per shot, with totals per scene.
-2. Setups (camera positions) and a shoot-order view.
-3. Character names in coverage recipes.
-4. Shots without a stage still draw every angle except Dutch at eye level.
+1. Setups (camera positions) and a shoot-order view.
+2. Character names in coverage recipes.
+3. Shots without a stage still draw every angle except Dutch at eye level.

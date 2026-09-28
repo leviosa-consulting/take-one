@@ -57,6 +57,7 @@ function shotCard(film, sceneIdx, shotIdx, warn) {
           <span class="chip"><span class="k">Angle</span><select data-f="angle" id="a-${shot.id}" aria-label="Camera angle">${opts(ANGLES, shot.angle)}</select></span>
           <span class="chip"><span class="k">Move</span><select data-f="move" id="m-${shot.id}" aria-label="Camera movement">${opts(MOVES, shot.move)}</select></span>
           <span class="chip"><span class="k">Lens</span><select data-f="lens" id="l-${shot.id}" aria-label="Lens">${opts(LENSES, shot.lens)}</select></span>
+          <span class="chip dur"><span class="k">Length</span><input data-f="dur" id="t-${shot.id}" value="${fmtDur(shot.dur)}" placeholder="0:00" inputmode="numeric" aria-label="Length of the shot, in seconds or minutes:seconds"></span>
           <span class="chip notes"><input data-f="notes" id="n-${shot.id}" value="${esc(shot.notes)}" placeholder="Gear, lighting, sound notes" aria-label="Notes"></span>
         </div>
         <div class="conts" data-cont>${contWarnings(warn.get(shot.id))}</div>
@@ -77,6 +78,14 @@ function shotCard(film, sceneIdx, shotIdx, warn) {
     ${open ? coachPanel(shot) : ''}
   </div>`;
 }
+function durLabel(shots) {
+  const open = shots.filter(s => !s.dur).length, t = fmtDur(sumDur(shots));
+  return open && open < shots.length ? `${t} + ${open} untimed` : open ? 'no lengths' : t;
+}
+function updateTotals(film, sc) {
+  const p = document.querySelector(`.scene[data-scene="${sc.id}"] .sc-dur`); if (p) p.textContent = durLabel(sc.shots);
+  const f = document.getElementById('sum-dur'); if (f) f.textContent = fmtDur(film.scenes.reduce((n, x) => n + sumDur(x.shots), 0));
+}
 function sceneBlock(film, i) {
   const sc = film.scenes[i];
   const done = sc.shots.filter(s => s.done).length;
@@ -88,7 +97,8 @@ function sceneBlock(film, i) {
         <textarea class="desc" data-sf="description" rows="1" placeholder="One line on what happens in the scene" aria-label="Scene description">${esc(sc.description)}</textarea>
       </div>
       <div class="scene-tools">
-        <span class="pill">${done}/${sc.shots.length} shot</span>
+        <span class="pill sc-dur" title="Length of the scene, from the shots that have one">${durLabel(sc.shots)}</span>
+        <span class="pill sc-done">${done}/${sc.shots.length} shot</span>
         <button class="btn small ghost" data-sact="up" title="Move scene up">${ICONS.up}</button>
         <button class="btn small ghost" data-sact="down" title="Move scene down">${ICONS.down}</button>
         <span class="del-slot"><button class="btn small ghost danger" data-sact="del">Delete scene</button></span>
@@ -104,6 +114,7 @@ function sceneBlock(film, i) {
 function normalize(film) {
   // shots saved by an earlier version used a framing value for the establishing shot
   film.scenes.forEach(sc => sc.shots.forEach(s => {
+    if (s.dur != null && !(Number.isFinite(s.dur) && s.dur > 0)) delete s.dur;
     if (s.framing === 'establishing') { s.framing = 'single'; s.size = 'EST'; }
     if (s.lens && !LENSES.includes(s.lens)) { const m = LENSES.find(l => l.split(' ')[0] === s.lens.split(' ')[0]); if (m) s.lens = m; }
   }));
@@ -136,7 +147,7 @@ function renderList() {
         <span class="del-slot"><button class="btn ghost danger" id="del-film">Delete film</button></span>
       </div>
     </div>
-    <div class="summary"><span><b>${film.scenes.length}</b>scene${film.scenes.length === 1 ? '' : 's'}</span><span><b>${shots}</b>shots</span><span><b>${moving}</b>moving</span><span><b>${done}</b>shot so far</span></div>
+    <div class="summary"><span><b>${film.scenes.length}</b>scene${film.scenes.length === 1 ? '' : 's'}</span><span><b>${shots}</b>shots</span><span><b>${moving}</b>moving</span><span><b>${done}</b>shot so far</span><span title="Running time, from the shots that have a length"><b id="sum-dur">${fmtDur(film.scenes.reduce((n, x) => n + sumDur(x.shots), 0))}</b>running time</span></div>
     ${state.mode === 'local' ? '<p class="note-local">Your lists live in this browser only. Sign in to the organisation that owns this page to keep them across devices.</p>' : '<p class="note-local">Your lists are private to you. Nobody else who opens this page can see them.</p>'}
     ${state.board ? boardView(film) : `<div id="scenes">${film.scenes.map((_, i) => sceneBlock(film, i)).join('')}</div>
     <div style="margin-top:16px"><button class="btn primary" id="add-scene">+ Add scene</button></div>`}`;
@@ -149,7 +160,7 @@ function boardView(film) {
   return film.scenes.map((sc, i, _, warn = sceneContinuity(film, sc)) => `<section class="board-scene">
     <div class="board-head"><div class="sc-badge"><small>Scene</small>${i + 1}</div><div><div class="board-heading">${esc(sc.heading)}</div>${sc.description ? `<div class="board-desc">${esc(sc.description)}</div>` : ''}</div></div>
     ${sc.shots.length ? `<div class="board-grid">${sc.shots.map((s, j) => `<div class="board-frame ${s.done ? 'done' : ''}"><div class="thumb">${shotThumb(s, film)}</div>
-      <div class="bf-meta"><b>${shotLabel(i, j)}</b><span>${esc(SIZE[s.size]?.abbr)} \u00b7 ${esc(FRAME[s.framing]?.name)} \u00b7 ${esc(ANGLE[s.angle]?.name)} \u00b7 ${esc(MOVE[s.move]?.name)}</span></div>
+      <div class="bf-meta"><b>${shotLabel(i, j)}</b>${s.dur ? `<span class="bf-dur">${fmtDur(s.dur)}</span>` : ''}<span>${esc(SIZE[s.size]?.abbr)} \u00b7 ${esc(FRAME[s.framing]?.name)} \u00b7 ${esc(ANGLE[s.angle]?.name)} \u00b7 ${esc(MOVE[s.move]?.name)}</span></div>
       <p>${esc(s.description) || '<span class="muted">No description</span>'}</p>${s.notes ? `<p class="bf-notes">${esc(s.notes)}</p>` : ''}${warn.has(s.id) ? `<div class="conts">${contWarnings(warn.get(s.id))}</div>` : ''}</div>`).join('')}</div>` : '<p class="empty-shots">No shots in this scene.</p>'}
   </section>`).join('');
 }
@@ -199,9 +210,15 @@ function wireList(el, film) {
     const shot = sc.shots.find(s => s.id === shotEl.dataset.shot); if (!shot) return;
     const f = t.dataset.f; if (!f) return;
     if (f === 'done') { shot.done = t.checked; save(film); rerenderShot(film, sc, shot); return; }
+    if (f === 'dur') {
+      const d = parseDur(t.value); t.classList.toggle('bad', d === undefined); if (d === undefined) return;
+      if (d) shot.dur = d; else delete shot.dur;
+      save(film); updateTotals(film, sc); return;
+    }
     shot[f] = t.value; save(film);
     if (t.tagName === 'SELECT') rerenderShot(film, sc, shot, t.id);
   });
+  el.addEventListener('change', e => { const t = e.target; if (t.dataset.f !== 'dur' || t.classList.contains('bad')) return; const shot = shotOf(film, t); if (shot) t.value = fmtDur(shot.dur); });
   el.addEventListener('click', e => {
     const b = e.target.closest('button[data-act],button[data-sact]'); if (!b) return;
     const sceneEl = b.closest('.scene'); const si = film.scenes.findIndex(s => s.id === sceneEl.dataset.scene); const sc = film.scenes[si];
@@ -223,6 +240,7 @@ function wireList(el, film) {
     if (a === 'del') { sc.shots.splice(idx, 1); save(film); renderList(); toast('Shot deleted'); }
   });
 }
+function shotOf(film, el) { const sc = film.scenes.find(s => s.id === el.closest('.scene')?.dataset.scene); return sc && sc.shots.find(s => s.id === el.closest('.shot')?.dataset.shot); }
 function rerenderShot(film, sc, shot, focusId) {
   const si = film.scenes.indexOf(sc), idx = sc.shots.indexOf(shot);
   const old = document.querySelector(`.shot[data-shot="${shot.id}"]`); if (!old) return;
@@ -230,7 +248,8 @@ function rerenderShot(film, sc, shot, focusId) {
   const node = tmp.firstElementChild; old.replaceWith(node);
   const sp = node.querySelector('.stage-panel'); if (sp) wireStage(sp, film, sc, shot);
   refreshContinuity(film, sc);
-  const pill = document.querySelector(`.scene[data-scene="${sc.id}"] .pill`); if (pill) pill.textContent = `${sc.shots.filter(s => s.done).length}/${sc.shots.length} shot`;
+  updateTotals(film, sc);
+  const pill = document.querySelector(`.scene[data-scene="${sc.id}"] .sc-done`); if (pill) pill.textContent = `${sc.shots.filter(s => s.done).length}/${sc.shots.length} shot`;
   if (focusId) document.getElementById(focusId)?.focus();
 }
 function coverage(recipeId = 'dialogue') {

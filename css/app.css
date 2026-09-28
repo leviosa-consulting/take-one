@@ -218,6 +218,10 @@ section.learn header p{color:var(--muted);max-width:70ch}
 .chip .k{font-family:var(--display);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:0 0 0 9px}
 .chip select{appearance:none;-webkit-appearance:none;border:0;background:transparent;padding:0 22px 0 6px;height:100%;font-size:13px;font-weight:500;cursor:pointer;max-width:200px;text-overflow:ellipsis}
 .chip::after{content:"";position:absolute;right:9px;top:9px;width:6px;height:6px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(45deg);pointer-events:none}
+.chip.dur::after{display:none}
+.chip.dur input{border:0;background:transparent;padding:0 10px 0 6px;height:100%;font-size:13px;font-weight:500;width:5.2em;font-variant-numeric:tabular-nums}
+.chip.dur input.bad{color:var(--danger);text-decoration:underline wavy}
+.bf-dur{font-variant-numeric:tabular-nums;color:var(--muted)}
 .chip.notes{flex:1;min-width:140px;background:transparent}
 .chip.notes::after{display:none}
 .chip.notes input{border:0;background:transparent;padding:0 10px;height:100%;font-size:13px;width:100%}
