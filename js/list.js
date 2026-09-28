@@ -36,8 +36,14 @@ function coachPanel(shot) {
   return `<div class="coach"><div class="grid">${items.map(([k, it]) => it ? vocabCard(k, it) : '').join('')}</div>
     ${tips.length ? `<div class="tips">${tips.map(t => `<div class="tip">${esc(t)}</div>`).join('')}</div>` : ''}</div>`;
 }
-function shotCard(film, sceneIdx, shotIdx) {
+function contWarnings(list) { return (list || []).map(m => `<div class="cont">${esc(m)}</div>`).join(''); }
+function refreshContinuity(film, sc) {
+  const warn = sceneContinuity(film, sc);
+  document.querySelectorAll(`.scene[data-scene="${sc.id}"] .shot`).forEach(el => { const box = el.querySelector('[data-cont]'); if (box) box.innerHTML = contWarnings(warn.get(el.dataset.shot)); });
+}
+function shotCard(film, sceneIdx, shotIdx, warn) {
   const scene = film.scenes[sceneIdx], shot = scene.shots[shotIdx];
+  warn = warn || sceneContinuity(film, scene);
   const open = state.expanded.has(shot.id), stageOpen = state.stageOpen === shot.id;
   return `<div class="shot ${shot.done ? 'done' : ''}" data-shot="${shot.id}">
     <div class="shot-row">
@@ -53,6 +59,7 @@ function shotCard(film, sceneIdx, shotIdx) {
           <span class="chip"><span class="k">Lens</span><select data-f="lens" id="l-${shot.id}" aria-label="Lens">${opts(LENSES, shot.lens)}</select></span>
           <span class="chip notes"><input data-f="notes" id="n-${shot.id}" value="${esc(shot.notes)}" placeholder="Gear, lighting, sound notes" aria-label="Notes"></span>
         </div>
+        <div class="conts" data-cont>${contWarnings(warn.get(shot.id))}</div>
       </div>
       <div class="shot-actions">
         <label class="done-lbl"><input type="checkbox" data-f="done" id="c-${shot.id}" ${shot.done ? 'checked' : ''}> Shot</label>
@@ -87,7 +94,7 @@ function sceneBlock(film, i) {
         <span class="del-slot"><button class="btn small ghost danger" data-sact="del">Delete scene</button></span>
       </div>
     </div>
-    <div class="shots">${sc.shots.length ? sc.shots.map((_, j) => shotCard(film, i, j)).join('') : '<div class="empty-shots">No shots yet. Add one, or drop in the standard dialogue coverage.</div>'}</div>
+    <div class="shots">${sc.shots.length ? (warn => sc.shots.map((_, j) => shotCard(film, i, j, warn)).join(''))(sceneContinuity(film, sc)) : '<div class="empty-shots">No shots yet. Add one, or drop in the standard dialogue coverage.</div>'}</div>
     <div class="add-row">
       <button class="btn" data-sact="add">+ Add shot</button>
       <span class="chip recipe-pick"><span class="k">Add coverage</span><select data-sact="recipe" aria-label="Add coverage recipe"><option value="">choose a scene type…</option>${RECIPES.map(r => `<option value="${r.id}">${esc(r.name)} (${r.shots.length})</option>`).join('')}</select></span>
@@ -139,11 +146,11 @@ function renderList() {
   placeTopRight();
 }
 function boardView(film) {
-  return film.scenes.map((sc, i) => `<section class="board-scene">
+  return film.scenes.map((sc, i, _, warn = sceneContinuity(film, sc)) => `<section class="board-scene">
     <div class="board-head"><div class="sc-badge"><small>Scene</small>${i + 1}</div><div><div class="board-heading">${esc(sc.heading)}</div>${sc.description ? `<div class="board-desc">${esc(sc.description)}</div>` : ''}</div></div>
     ${sc.shots.length ? `<div class="board-grid">${sc.shots.map((s, j) => `<div class="board-frame ${s.done ? 'done' : ''}"><div class="thumb">${shotThumb(s, film)}</div>
       <div class="bf-meta"><b>${shotLabel(i, j)}</b><span>${esc(SIZE[s.size]?.abbr)} \u00b7 ${esc(FRAME[s.framing]?.name)} \u00b7 ${esc(ANGLE[s.angle]?.name)} \u00b7 ${esc(MOVE[s.move]?.name)}</span></div>
-      <p>${esc(s.description) || '<span class="muted">No description</span>'}</p>${s.notes ? `<p class="bf-notes">${esc(s.notes)}</p>` : ''}</div>`).join('')}</div>` : '<p class="empty-shots">No shots in this scene.</p>'}
+      <p>${esc(s.description) || '<span class="muted">No description</span>'}</p>${s.notes ? `<p class="bf-notes">${esc(s.notes)}</p>` : ''}${warn.has(s.id) ? `<div class="conts">${contWarnings(warn.get(s.id))}</div>` : ''}</div>`).join('')}</div>` : '<p class="empty-shots">No shots in this scene.</p>'}
   </section>`).join('');
 }
 function autosize(t) { t.style.height = 'auto'; t.style.height = (t.scrollHeight) + 'px'; }
@@ -222,6 +229,7 @@ function rerenderShot(film, sc, shot, focusId) {
   const tmp = document.createElement('div'); tmp.innerHTML = shotCard(film, si, idx);
   const node = tmp.firstElementChild; old.replaceWith(node);
   const sp = node.querySelector('.stage-panel'); if (sp) wireStage(sp, film, sc, shot);
+  refreshContinuity(film, sc);
   const pill = document.querySelector(`.scene[data-scene="${sc.id}"] .pill`); if (pill) pill.textContent = `${sc.shots.filter(s => s.done).length}/${sc.shots.length} shot`;
   if (focusId) document.getElementById(focusId)?.focus();
 }

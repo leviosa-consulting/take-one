@@ -23,14 +23,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # index.html is written for the artifact host, which adds the doctype and head.
+      # index.html is written for the artifact host, which adds the doctype and the rest of the head.
       # Add them here so the page renders in standards mode as a plain website.
       - name: Build site
         run: |
           mkdir _site
           cp -r css js _site/
           {
-            printf '<!doctype html>\n<html lang="en">\n<meta charset="utf-8">\n'
+            printf '<!doctype html>\n<html lang="en">\n'
             printf '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
             cat index.html
           } > _site/index.html
