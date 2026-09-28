@@ -54,6 +54,7 @@ p{margin:0}
 .btn.ghost{border-color:transparent;background:transparent;color:var(--muted)}
 .btn.ghost:hover{color:var(--ink);background:var(--surface-2)}
 .btn.danger{color:var(--danger)}
+.btn:disabled{opacity:.45;cursor:default}
 select.ctl,input.ctl,textarea.ctl{border:1px solid var(--line);background:var(--surface);border-radius:5px;padding:6px 8px;font-size:14px;min-width:0}
 textarea.ctl{resize:vertical}
 label.lbl{display:block;font-family:var(--display);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
@@ -218,6 +219,10 @@ section.learn header p{color:var(--muted);max-width:70ch}
 .chip .k{font-family:var(--display);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:0 0 0 9px}
 .chip select{appearance:none;-webkit-appearance:none;border:0;background:transparent;padding:0 22px 0 6px;height:100%;font-size:13px;font-weight:500;cursor:pointer;max-width:200px;text-overflow:ellipsis}
 .chip::after{content:"";position:absolute;right:9px;top:9px;width:6px;height:6px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(45deg);pointer-events:none}
+.chip.dur::after{display:none}
+.chip.dur input{border:0;background:transparent;padding:0 10px 0 6px;height:100%;font-size:13px;font-weight:500;width:5.2em;font-variant-numeric:tabular-nums}
+.chip.dur input.bad{color:var(--danger);text-decoration:underline wavy}
+.bf-dur{font-variant-numeric:tabular-nums;color:var(--muted)}
 .chip.notes{flex:1;min-width:140px;background:transparent}
 .chip.notes::after{display:none}
 .chip.notes input{border:0;background:transparent;padding:0 10px;height:100%;font-size:13px;width:100%}
@@ -236,6 +241,11 @@ section.learn header p{color:var(--muted);max-width:70ch}
 .coach .card h4{font-size:17px}
 .tips{margin-top:10px;display:flex;flex-direction:column;gap:6px}
 .tip{font-size:13.5px;padding:8px 10px;border-radius:4px;background:var(--accent-soft);color:var(--accent-ink);border-left:3px solid var(--accent)}
+.on-set{font-size:13px;color:var(--muted);margin-top:4px}
+.on-set .lbl-inline{margin-right:8px}
+.conts{display:flex;flex-direction:column;gap:4px;margin-top:6px}
+.conts:empty{display:none}
+.cont{font-size:12.5px;line-height:1.4;padding:5px 8px;border-radius:4px;color:var(--danger);background:var(--surface-2);border-left:3px solid var(--danger)}
 .confirm{display:inline-flex;gap:6px;align-items:center;font-size:13px;color:var(--danger)}
 .empty{padding:40px 16px;text-align:center;color:var(--muted)}
 .empty h3{font-size:26px;text-transform:uppercase;letter-spacing:.02em;color:var(--ink);margin-bottom:8px}

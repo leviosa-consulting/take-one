@@ -6,7 +6,7 @@ Three tabs:
 
 - **Learn.** Eleven chapters with drawings: shot sizes, framing, camera angles, camera movements, lenses, rules of the cut, exposure for video, light, sound, and sources.
 - **Coverage.** Ten starting shot sets for common kinds of scene, from two people talking to the passage of time. Each one drops into a scene with one click.
-- **Shot list.** Films, scenes and shots. Each shot has a size, framing, angle, move, lens, description and notes. A coach panel shows the drawings for the choices you made and warns about combinations that fight each other. A stage per shot lets you place cast and props and produces the shot's frame. A board view shows each scene as a storyboard.
+- **Shot list.** Films, scenes and shots. Each shot has a size, framing, angle, move, lens, length, description and notes. Scenes and the film show their running time, and each scene lists the props on set. A coach panel shows the drawings for the choices you made and warns about combinations that fight each other. A stage per shot lets you place cast and eighteen props, indoor and outdoor, and produces the shot's frame, seen from the shot's camera angle. The list warns when a shot crosses the line or an eyeline points the wrong way. A board view shows each scene as a storyboard.
 
 ## Run it
 
@@ -25,7 +25,8 @@ index.html        page skeleton: header, tabs, three empty views
 css/app.css       all styles; colour tokens at the top, light and dark
 js/data.js        vocabulary and coverage recipes (the content)
 js/drawings.js    SVG drawings: the figure, compositions, diagrams
-js/stage.js       people and props per shot, frame rendering, framing detection
+js/stage.js       people and props per shot, frame rendering per camera angle, framing detection
+js/continuity.js  line-crossing and eyeline checks across the shots of a scene
 js/learn.js       Learn tab chapters and navigation
 js/storage.js     state, private store, browser storage fallback
 js/list.js        Shot list tab: films, scenes, shots, board view, exports
@@ -44,11 +45,11 @@ When the page runs as a claude.ai artifact, it uses the artifact's document stor
 ```
 film   { id, title, logline, cast: [{id, name, color}], createdAt, updatedAt, scenes: [scene] }
 scene  { id, heading, description, shots: [shot] }
-shot   { id, size, framing, angle, move, lens, description, notes, done, stage? }
+shot   { id, size, framing, angle, move, lens, dur?, description, notes, done, stage? }
 stage  { items: [{ id, kind: 'cast'|'prop', ref, x, z, face, pose }] }
 ```
 
-`size`, `framing`, `angle` and `move` are ids from `js/data.js`. `lens` is one of the labels in `LENSES`. `x` is the horizontal position in figure units, `z` is depth (0 front, 1 middle, 2 back).
+`size`, `framing`, `angle` and `move` are ids from `js/data.js`. `lens` is one of the labels in `LENSES`. `dur` is the shot's length in whole seconds; shots without one are left out of the totals. `x` is the horizontal position in figure units. `z` is depth from 0 (front) to 3; the menu names 0, 1 and 2 Front, Middle and Back, and dragging sets anything in between. Items further back are drawn first. At the same depth, the order of `items` decides: earlier is behind. The Behind and In front buttons change that order.
 
 ## Publishing
 

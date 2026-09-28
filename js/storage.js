@@ -3,6 +3,15 @@ const uid = () => (crypto.randomUUID ? crypto.randomUUID().slice(0, 8) : Math.ra
 const state = { films: {}, currentId: null, db: null, downloads: null, mode: 'loading', dirty: {}, timers: {}, chains: {}, expanded: new Set(), tab: 'learn' };
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { } } };
 
+// Shot length in seconds. Typed as 8, 8s, 0:08 or 1:30; shown as m:ss.
+function parseDur(v) {
+  const t = String(v ?? '').trim().toLowerCase(); if (!t) return null;
+  let m = t.match(/^(\d+):([0-5]?\d)$/); if (m) return +m[1] * 60 + +m[2];
+  m = t.match(/^(\d+(?:\.\d+)?)\s*s?$/); if (m) return Math.round(+m[1]);
+  return undefined; // not a length
+}
+function fmtDur(sec) { return sec == null ? '' : `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`; }
+function sumDur(shots) { return shots.reduce((n, s) => n + (s.dur || 0), 0); }
 function newShot(p = {}) { return { id: uid(), size: 'MS', framing: 'single', angle: 'eye', move: 'static', lens: LENSES[1], description: '', notes: '', done: false, ...p }; }
 function newScene(p = {}) { return { id: uid(), heading: 'INT. LOCATION - NIGHT', description: '', shots: [], ...p }; }
 function newFilm(title = 'Untitled film') { const now = Date.now(); return { id: uid(), title, logline: '', createdAt: now, updatedAt: now, scenes: [newScene()] }; }
@@ -15,18 +24,18 @@ function exampleFilm() {
   const maya = (x, o = {}) => ({ kind: 'cast', ref: 'maya', x, ...o }), dev = (x, o = {}) => ({ kind: 'cast', ref: 'dev', x, ...o }), prop = (ref, x, z = 1) => ({ kind: 'prop', ref, x, z });
   f.scenes = [
     newScene({ heading: 'INT. OFFICE - NIGHT', description: 'Maya works alone at her desk. The lights cut out.', shots: [
-      newShot({ size: 'WS', framing: 'single', angle: 'eye', move: 'static', lens: LENSES[1], description: 'Master. Maya at the desk, the empty office around her.', notes: 'Tripod on the far table. Practical lamps on.', stage: st(prop('window', -70, 2), prop('desk', 0, 0), maya(0, { pose: 'sit' }), prop('lamp', 46, 1), prop('door', 100, 2)) }),
-      newShot({ size: 'MS', framing: 'single', angle: 'high', move: 'static', lens: LENSES[1], description: 'Maya types. She looks small in the frame.', notes: 'Gimbal held overhead, or phone clamped to the shelf.' }),
-      newShot({ size: 'CU', framing: 'single', angle: 'eye', move: 'push', lens: LENSES[2], description: 'She notices the time. Slow push in.', notes: 'Very slow walk. Two takes minimum.', stage: st(maya(0, { pose: 'sit' }), prop('window', -60, 2)) }),
-      newShot({ size: 'ECU', framing: 'insert', angle: 'high', move: 'static', lens: LENSES[2], description: 'Insert: laptop clock reads 11:58.', notes: 'Lock focus. Shoot 10 seconds.' }),
-      newShot({ size: 'ECU', framing: 'single', angle: 'eye', move: 'static', lens: LENSES[2], description: 'Her eyes, as the lights cut.', notes: 'Kill the lights on cue, hold for 3 seconds.' }),
+      newShot({ dur: 12, size: 'WS', framing: 'single', angle: 'eye', move: 'static', lens: LENSES[1], description: 'Master. Maya at the desk, the empty office around her.', notes: 'Tripod on the far table. Practical lamps on.', stage: st(prop('window', -70, 2), maya(0, { pose: 'sit' }), prop('desk', 0, 0), prop('lamp', 46, 1), prop('door', 100, 2)) }),
+      newShot({ dur: 6, size: 'MS', framing: 'single', angle: 'high', move: 'static', lens: LENSES[1], description: 'Maya types. She looks small in the frame.', notes: 'Gimbal held overhead, or phone clamped to the shelf.' }),
+      newShot({ dur: 5, size: 'CU', framing: 'single', angle: 'eye', move: 'push', lens: LENSES[2], description: 'She notices the time. Slow push in.', notes: 'Very slow walk. Two takes minimum.', stage: st(maya(0, { pose: 'sit' }), prop('window', -60, 2)) }),
+      newShot({ dur: 3, size: 'ECU', framing: 'insert', angle: 'high', move: 'static', lens: LENSES[2], description: 'Insert: laptop clock reads 11:58.', notes: 'Lock focus. Shoot 10 seconds.' }),
+      newShot({ dur: 4, size: 'ECU', framing: 'single', angle: 'eye', move: 'static', lens: LENSES[2], description: 'Her eyes, as the lights cut.', notes: 'Kill the lights on cue, hold for 3 seconds.' }),
     ]}),
     newScene({ heading: 'INT. CORRIDOR - NIGHT', description: 'Maya meets Dev with a torch. Neither expected the other.', shots: [
-      newShot({ size: 'MWS', framing: 'two', angle: 'eye', move: 'static', lens: LENSES[1], description: 'Master two-shot. Torch beam finds Maya.', notes: 'Shoot the whole scene.', stage: st(prop('door', 80, 2), maya(-24, { face: 'right' }), dev(26, { face: 'left' })) }),
-      newShot({ size: 'MCU', framing: 'ots', angle: 'eye', move: 'static', lens: LENSES[2], description: 'Over Maya’s shoulder onto Dev.', notes: 'Camera on the window side of the line.', stage: st(maya(-22, { face: 'away' }), dev(10, { face: 'left', z: 1 }), prop('door', 70, 2)) }),
-      newShot({ size: 'MCU', framing: 'ots', angle: 'eye', move: 'static', lens: LENSES[2], description: 'Over Dev’s shoulder onto Maya.', notes: 'Same side of the line as 2B.', stage: st(dev(22, { face: 'away' }), maya(-10, { face: 'right', z: 1 })) }),
-      newShot({ size: 'CU', framing: 'single', angle: 'low', move: 'static', lens: LENSES[2], description: 'Dev. He knows more than he says.', notes: 'Slight low angle only.', stage: st(dev(0, { face: 'left' })) }),
-      newShot({ size: 'ECU', framing: 'insert', angle: 'high', move: 'static', lens: LENSES[2], description: 'Insert: Dev’s keys.', notes: '' }),
+      newShot({ dur: 20, size: 'MWS', framing: 'two', angle: 'eye', move: 'static', lens: LENSES[1], description: 'Master two-shot. Torch beam finds Maya.', notes: 'Shoot the whole scene.', stage: st(prop('door', 80, 2), maya(-24, { face: 'right' }), dev(26, { face: 'left' })) }),
+      newShot({ dur: 8, size: 'MCU', framing: 'ots', angle: 'eye', move: 'static', lens: LENSES[2], description: 'Over Maya’s shoulder onto Dev.', notes: 'Camera on the window side of the line.', stage: st(maya(-22, { face: 'away' }), dev(10, { face: 'left', z: 1 }), prop('door', 70, 2)) }),
+      newShot({ dur: 8, size: 'MCU', framing: 'ots', angle: 'eye', move: 'static', lens: LENSES[2], description: 'Over Dev’s shoulder onto Maya.', notes: 'Same side of the line as 2B.', stage: st(dev(22, { face: 'away' }), maya(-10, { face: 'right', z: 1 })) }),
+      newShot({ dur: 4, size: 'CU', framing: 'single', angle: 'low', move: 'static', lens: LENSES[2], description: 'Dev. He knows more than he says.', notes: 'Slight low angle only.', stage: st(dev(0, { face: 'left' })) }),
+      newShot({ dur: 6, size: 'ECU', framing: 'insert', angle: 'high', move: 'static', lens: LENSES[2], description: 'Insert: Dev’s keys.', notes: '' }),
     ]}),
   ];
   return f;
