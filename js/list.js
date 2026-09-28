@@ -78,6 +78,12 @@ function shotCard(film, sceneIdx, shotIdx, warn) {
     ${open ? coachPanel(shot) : ''}
   </div>`;
 }
+// Props placed on any stage in the scene, in the order they first appear: a checklist for the set.
+function sceneProps(sc) {
+  const ids = []; sc.shots.forEach(sh => stageItems(sh).forEach(i => { if (i.kind === 'prop' && !ids.includes(i.ref)) ids.push(i.ref); }));
+  return ids.map(id => (PROPS.find(p => p.id === id) || {}).name).filter(Boolean);
+}
+function propsLine(sc) { const p = sceneProps(sc); return p.length ? `<div class="on-set"><span class="lbl-inline">On set</span>${p.map(esc).join(', ')}</div>` : ''; }
 function durLabel(shots) {
   const open = shots.filter(s => !s.dur).length, t = fmtDur(sumDur(shots));
   return open && open < shots.length ? `${t} + ${open} untimed` : open ? 'no lengths' : t;
@@ -95,6 +101,7 @@ function sceneBlock(film, i) {
       <div>
         <input class="heading" data-sf="heading" value="${esc(sc.heading)}" placeholder="INT. LOCATION - NIGHT" aria-label="Scene heading">
         <textarea class="desc" data-sf="description" rows="1" placeholder="One line on what happens in the scene" aria-label="Scene description">${esc(sc.description)}</textarea>
+        <div class="on-set-slot">${propsLine(sc)}</div>
       </div>
       <div class="scene-tools">
         <span class="pill sc-dur" title="Length of the scene, from the shots that have one">${durLabel(sc.shots)}</span>
@@ -158,7 +165,7 @@ function renderList() {
 }
 function boardView(film) {
   return film.scenes.map((sc, i, _, warn = sceneContinuity(film, sc)) => `<section class="board-scene">
-    <div class="board-head"><div class="sc-badge"><small>Scene</small>${i + 1}</div><div><div class="board-heading">${esc(sc.heading)}</div>${sc.description ? `<div class="board-desc">${esc(sc.description)}</div>` : ''}</div></div>
+    <div class="board-head"><div class="sc-badge"><small>Scene</small>${i + 1}</div><div><div class="board-heading">${esc(sc.heading)}</div>${sc.description ? `<div class="board-desc">${esc(sc.description)}</div>` : ''}${propsLine(sc)}</div></div>
     ${sc.shots.length ? `<div class="board-grid">${sc.shots.map((s, j) => `<div class="board-frame ${s.done ? 'done' : ''}"><div class="thumb">${shotThumb(s, film)}</div>
       <div class="bf-meta"><b>${shotLabel(i, j)}</b>${s.dur ? `<span class="bf-dur">${fmtDur(s.dur)}</span>` : ''}<span>${esc(SIZE[s.size]?.abbr)} \u00b7 ${esc(FRAME[s.framing]?.name)} \u00b7 ${esc(ANGLE[s.angle]?.name)} \u00b7 ${esc(MOVE[s.move]?.name)}</span></div>
       <p>${esc(s.description) || '<span class="muted">No description</span>'}</p>${s.notes ? `<p class="bf-notes">${esc(s.notes)}</p>` : ''}${warn.has(s.id) ? `<div class="conts">${contWarnings(warn.get(s.id))}</div>` : ''}</div>`).join('')}</div>` : '<p class="empty-shots">No shots in this scene.</p>'}
@@ -249,6 +256,7 @@ function rerenderShot(film, sc, shot, focusId) {
   const sp = node.querySelector('.stage-panel'); if (sp) wireStage(sp, film, sc, shot);
   refreshContinuity(film, sc);
   updateTotals(film, sc);
+  const onSet = document.querySelector(`.scene[data-scene="${sc.id}"] .on-set-slot`); if (onSet) onSet.innerHTML = propsLine(sc);
   const pill = document.querySelector(`.scene[data-scene="${sc.id}"] .sc-done`); if (pill) pill.textContent = `${sc.shots.filter(s => s.done).length}/${sc.shots.length} shot`;
   if (focusId) document.getElementById(focusId)?.focus();
 }

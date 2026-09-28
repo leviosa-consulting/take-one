@@ -6,7 +6,7 @@ Three tabs:
 
 - **Learn.** Eleven chapters with drawings: shot sizes, framing, camera angles, camera movements, lenses, rules of the cut, exposure for video, light, sound, and sources.
 - **Coverage.** Ten starting shot sets for common kinds of scene, from two people talking to the passage of time. Each one drops into a scene with one click.
-- **Shot list.** Films, scenes and shots. Each shot has a size, framing, angle, move, lens, length, description and notes. Scenes and the film show their running time. A coach panel shows the drawings for the choices you made and warns about combinations that fight each other. A stage per shot lets you place cast and props and produces the shot's frame, seen from the shot's camera angle. The list warns when a shot crosses the line or an eyeline points the wrong way. A board view shows each scene as a storyboard.
+- **Shot list.** Films, scenes and shots. Each shot has a size, framing, angle, move, lens, length, description and notes. Scenes and the film show their running time, and each scene lists the props on set. A coach panel shows the drawings for the choices you made and warns about combinations that fight each other. A stage per shot lets you place cast and eighteen props, indoor and outdoor, and produces the shot's frame, seen from the shot's camera angle. The list warns when a shot crosses the line or an eyeline points the wrong way. A board view shows each scene as a storyboard.
 
 ## Run it
 

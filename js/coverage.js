@@ -40,7 +40,7 @@ function asText(film) {
   const total = film.scenes.reduce((n, sc) => n + sumDur(sc.shots), 0);
   const lines = [film.title.toUpperCase() + (total ? `  (running time ${fmtDur(total)})` : ''), film.logline || '', ''];
   film.scenes.forEach((sc, i) => {
-    lines.push(`SC ${i + 1}  ${sc.heading}${sumDur(sc.shots) ? '  (' + fmtDur(sumDur(sc.shots)) + ')' : ''}`); if (sc.description) lines.push(`      ${sc.description}`);
+    lines.push(`SC ${i + 1}  ${sc.heading}${sumDur(sc.shots) ? '  (' + fmtDur(sumDur(sc.shots)) + ')' : ''}`); if (sc.description) lines.push(`      ${sc.description}`); if (sceneProps(sc).length) lines.push(`      On set: ${sceneProps(sc).join(', ')}`);
     sc.shots.forEach((s, j) => lines.push(`  ${shotLabel(i, j).padEnd(4)} ${s.done ? '[x]' : '[ ]'} ${SIZE[s.size]?.abbr.padEnd(4)} ${FRAME[s.framing]?.name.padEnd(18)} ${ANGLE[s.angle]?.name.padEnd(12)} ${MOVE[s.move]?.name.padEnd(16)} ${s.lens.padEnd(20)} ${fmtDur(s.dur).padStart(5)}  ${s.description}${s.notes ? '  (' + s.notes + ')' : ''}`));
     lines.push('');
   });
