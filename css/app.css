@@ -243,6 +243,12 @@ section.learn header p{color:var(--muted);max-width:70ch}
 .tip{font-size:13.5px;padding:8px 10px;border-radius:4px;background:var(--accent-soft);color:var(--accent-ink);border-left:3px solid var(--accent)}
 .on-set{font-size:13px;color:var(--muted);margin-top:4px}
 .on-set .lbl-inline{margin-right:8px}
+.account{display:flex;align-items:center;gap:8px;min-height:32px}
+.account .avatar{width:26px;height:26px;border-radius:50%;display:block}
+.account .acct-name{font-size:13px;max-width:14em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.import-offer{margin:10px 0;padding:10px 12px;border-radius:6px;background:var(--accent-soft);color:var(--accent-ink);font-size:14px}
+.import-offer p{margin:0 0 8px}
+.import-offer .acts{display:flex;gap:8px}
 .conts{display:flex;flex-direction:column;gap:4px;margin-top:6px}
 .conts:empty{display:none}
 .cont{font-size:12.5px;line-height:1.4;padding:5px 8px;border-radius:4px;color:var(--danger);background:var(--surface-2);border-left:3px solid var(--danger)}

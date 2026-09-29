@@ -1,0 +1,90 @@
+name: Deploy to the server
+
+# Tests the server, then copies the page and server to take-one.gbsims.com.
+# Setup and secrets: deploy/README.md.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci
+        working-directory: server
+      - run: npm test
+        working-directory: server
+
+  deploy:
+    needs: test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      HOST: ${{ secrets.DEPLOY_HOST }}
+      SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+      REL: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Before the server is set up there are no secrets: skip with a warning. Some but not all set: fail.
+      - name: Check the deploy secrets
+        id: secrets
+        run: |
+          if [ -z "$HOST$SSH_KEY$KNOWN_HOSTS" ]; then
+            echo "::warning::Not deploying: the server is not set up yet. See deploy/README.md."
+            echo "ready=no" >> "$GITHUB_OUTPUT"
+          elif [ -z "$HOST" ] || [ -z "$SSH_KEY" ] || [ -z "$KNOWN_HOSTS" ]; then
+            echo "::error::Set all three of DEPLOY_HOST, DEPLOY_SSH_KEY and DEPLOY_KNOWN_HOSTS. See deploy/README.md."
+            exit 1
+          else
+            echo "ready=yes" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up SSH
+        if: steps.secrets.outputs.ready == 'yes'
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Package the release
+        if: steps.secrets.outputs.ready == 'yes'
+        run: |
+          mkdir -p release/server
+          cp -r index.html css js release/
+          cp server/package.json server/package-lock.json server/*.js release/server/
+
+      # Each release gets its own folder. current points at the live one, so a bad release is one symlink away from undone.
+      - name: Upload, install and switch
+        if: steps.secrets.outputs.ready == 'yes'
+        run: |
+          rsync -az --delete release/ "takeone@$HOST:/srv/take-one/releases/$REL/"
+          ssh "takeone@$HOST" bash -s -- "$REL" <<'EOF'
+          set -euo pipefail
+          REL="$1"; ROOT=/srv/take-one
+          cd "$ROOT/releases/$REL/server"
+          npm ci --omit=dev --no-audit --no-fund
+          ln -sfn "$ROOT/releases/$REL" "$ROOT/current.new" && mv -T "$ROOT/current.new" "$ROOT/current"
+          sudo systemctl restart take-one
+          PORT=$(grep '^PORT=' /etc/take-one/env | cut -d= -f2)
+          for i in 1 2 3 4 5 6 7 8 9 10; do curl -fsS "http://127.0.0.1:$PORT/api/health" >/dev/null 2>&1 && break; sleep 1; done
+          curl -fsS "http://127.0.0.1:$PORT/api/health"
+          ls -1dt "$ROOT"/releases/* | tail -n +6 | xargs -r rm -rf
+          EOF
+
+      - name: Check the live site
+        if: steps.secrets.outputs.ready == 'yes'
+        run: curl -fsS https://take-one.gbsims.com/api/health
