@@ -1,4 +1,4 @@
-// State and storage: private per-viewer store when available, browser storage otherwise.
+// State and storage: our server when signed in (account.js), the claude.ai private store when hosted there, browser storage otherwise.
 const uid = () => (crypto.randomUUID ? crypto.randomUUID().slice(0, 8) : Math.random().toString(36).slice(2, 10));
 const state = { films: {}, currentId: null, db: null, downloads: null, mode: 'loading', dirty: {}, timers: {}, chains: {}, expanded: new Set(), tab: 'learn' };
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { } } };
@@ -17,7 +17,7 @@ function newScene(p = {}) { return { id: uid(), heading: 'INT. LOCATION - NIGHT'
 function newFilm(title = 'Untitled film') { const now = Date.now(); return { id: uid(), title, logline: '', createdAt: now, updatedAt: now, scenes: [newScene()] }; }
 
 function exampleFilm() {
-  const f = newFilm('After Hours (example)');
+  const f = newFilm('After Hours (example)'); f.example = true;
   f.logline = 'Two colleagues, an empty office, and a message neither wants to send. Example scenes to show how a list reads.';
   f.cast = [{ id: 'maya', name: 'Maya', color: CAST_COLORS[0] }, { id: 'dev', name: 'Dev', color: CAST_COLORS[1] }];
   const st = (...items) => ({ items: items.map(i => ({ id: uid(), face: 'camera', pose: 'stand', z: 0, ...i })) });
@@ -61,9 +61,10 @@ function flush(id) {
   const body = JSON.parse(JSON.stringify(film));
   const prev = state.chains[id] || Promise.resolve();
   state.chains[id] = prev.then(() => state.col.doc(id).set(body)).then(() => {
-    setPill('Saved, private to you', 'ok');
+    setPill(state.server ? 'Saved to your account' : 'Saved, private to you', 'ok');
     setTimeout(() => { delete state.dirty[id]; }, 1500);
   }).catch(e => {
+    if (e && e.status === 401 && state.server) { sessionEnded(); return; }
     console.error(e);
     if (e && e.code === 'invalid_argument') { fallToLocal('This view cannot write to the store, so your lists live in this browser only.'); return; }
     setPill('Not saved', 'warn'); toast('Could not save: ' + (e && e.message || e.code || 'unknown error'));
@@ -86,22 +87,25 @@ function addFilm(film) {
   renderFilmSelect(); renderList();
 }
 
+// No store: keep lists in this browser.
+function startLocal() {
+  state.mode = 'local';
+  state.films = LS.get('sgn:films', {});
+  if (!Object.keys(state.films).length) { const ex = exampleFilm(); state.films[ex.id] = ex; }
+  state.currentId = LS.get('sgn:current', null);
+  if (!state.films[state.currentId]) state.currentId = filmList()[0].id;
+  persistLocal(); setPill('Saved in this browser', 'warn');
+  renderFilmSelect(); renderList();
+}
 async function initStorage() {
+  if (await initServer()) return;
   const claude = window.claude;
   const use = n => claude && claude.use ? claude.use(n).catch(() => null) : Promise.resolve(null);
   const [db, user, downloads] = await Promise.all([use('db'), use('user'), use('downloads')]);
   state.downloads = downloads;
   const uid = user ? await user.id() : null;
-  if (!db || !uid) {
-    // no store, or no identity to keep a private one: keep lists in this browser
-    state.mode = 'local';
-    state.films = LS.get('sgn:films', {});
-    if (!Object.keys(state.films).length) { const ex = exampleFilm(); state.films[ex.id] = ex; }
-    state.currentId = LS.get('sgn:current', null) || filmList()[0].id;
-    persistLocal(); setPill('Saved in this browser', 'warn');
-    renderFilmSelect(); renderList();
-    return;
-  }
+  // no store, or no identity to keep a private one
+  if (!db || !uid) { startLocal(); return; }
   state.db = db; state.mode = 'db';
   // every viewer keeps their own films under their private subtree; nobody else can read them
   state.col = db.doc('data/users/' + uid + '/notebook').collection('films');

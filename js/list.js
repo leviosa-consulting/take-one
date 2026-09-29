@@ -132,7 +132,7 @@ function renderList() {
   if (film) normalize(film);
   if (state.mode === 'loading' || (state.mode === 'db' && !state.ready && !film)) { el.innerHTML = '<div class="empty"><p>Loading your films…</p></div>'; placeTopRight(); return; }
   if (!film) {
-    el.innerHTML = `<div class="empty"><h3>No film yet</h3><p>Start with a blank film, or load the example film to see how a list reads.</p>
+    el.innerHTML = `${state.server && state.server.user ? storageNote() : ''}<div class="empty"><h3>No film yet</h3><p>Start with a blank film, or load the example film to see how a list reads.</p>
       <div class="acts"><button class="btn primary" id="e-new">New film</button><button class="btn" id="e-example">Load the example</button></div></div>`;
     el.querySelector('#e-new').onclick = () => addFilm(newFilm());
     el.querySelector('#e-example').onclick = () => addFilm(exampleFilm());
@@ -155,7 +155,7 @@ function renderList() {
       </div>
     </div>
     <div class="summary"><span><b>${film.scenes.length}</b>scene${film.scenes.length === 1 ? '' : 's'}</span><span><b>${shots}</b>shots</span><span><b>${moving}</b>moving</span><span><b>${done}</b>shot so far</span><span title="Running time, from the shots that have a length"><b id="sum-dur">${fmtDur(film.scenes.reduce((n, x) => n + sumDur(x.shots), 0))}</b>running time</span></div>
-    ${state.mode === 'local' ? '<p class="note-local">Your lists live in this browser only. Sign in to the organisation that owns this page to keep them across devices.</p>' : '<p class="note-local">Your lists are private to you. Nobody else who opens this page can see them.</p>'}
+    ${storageNote()}
     ${state.board ? boardView(film) : `<div id="scenes">${film.scenes.map((_, i) => sceneBlock(film, i)).join('')}</div>
     <div style="margin-top:16px"><button class="btn primary" id="add-scene">+ Add scene</button></div>`}`;
   wireList(el, film);
